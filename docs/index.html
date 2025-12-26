@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sawtify: Technical Blueprint & Interactive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Palette & Utilities */
+        :root {
+            --color-bg: #F5F5F4; /* Stone 100 - Warm Light Background */
+            --color-surface: #FFFFFF;
+            --color-primary: #1C1917; /* Stone 900 */
+            --color-accent: #EA580C; /* Orange 600 */
+            --color-secondary: #57534E; /* Stone 600 */
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-primary);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+        }
+
+        .mono-text {
+            font-family: var(--font-mono);
+        }
+
+        /* Chart Container Styling - Mandatory Strictness */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Interactive Elements */
+        .feature-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .feature-card:hover, .feature-card.active {
+            transform: translateX(8px);
+            border-left-color: var(--color-accent);
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .system-node {
+            transition: all 0.3s ease;
+        }
+        .system-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(234, 88, 12, 0.2);
+            border-color: var(--color-accent);
+        }
+
+        /* Pulse Animation for Visualization Simulation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        
+        /* Utility for hiding scrollbar but keeping function */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutral (Stone) with Orange Accent for High Contrast & Professional Technical Feel -->
+    <!-- Application Structure Plan:
+         1. Hero: Project Identity.
+         2. System Architecture: Interactive flow map showing how components (FFmpeg, Whisper, Laravel) interact.
+         3. Technology Breakdown: Visualizing the stack composition.
+         4. Feature Matrix: Interactive list detailing the 4 core pillars (Upload, Arabic, Search, UX).
+         5. Implementation Specs: Simulation of the 'Drastic' UI requirements and specific CLI commands. 
+         This structure translates the linear requirements list into a holistic system view. -->
+    <!-- Visualization & Content Choices:
+         1. System Architecture -> Goal: Organize -> Viz: CSS Grid Flow -> Interaction: Hover effects to trace data path -> Justification: Shows logical flow clearly without SVG.
+         2. Stack Composition -> Goal: Inform -> Viz: Doughnut Chart -> Interaction: Filter segments -> Justification: Shows weight of backend vs frontend technologies.
+         3. Model Performance -> Goal: Compare -> Viz: Bar Chart -> Interaction: Toggle metrics -> Justification: Highlights why large-v3-turbo was chosen (speed/accuracy balance).
+         4. Audio Viz Sim -> Goal: Engagement -> Viz: HTML5 Canvas -> Interaction: Play/Pause animation -> Justification: Demonstrates the 'drastic' visual requirement requested in the source. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center text-white font-bold text-xl">S</div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-stone-900">SAWTIFY <span class="text-orange-600">ARCHITECT</span></h1>
+                    <p class="text-xs text-stone-500 font-mono">v1.0.0 // TECHNICAL BLUEPRINT</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-8">
+                <a href="#architecture" class="text-stone-600 hover:text-stone-900 font-medium transition-colors">Architecture</a>
+                <a href="#features" class="text-stone-600 hover:text-stone-900 font-medium transition-colors">Features</a>
+                <a href="#specs" class="text-stone-600 hover:text-stone-900 font-medium transition-colors">Specs</a>
+            </nav>
+            <button onclick="window.print()" class="bg-stone-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-stone-800 transition-colors">
+                Export Plan
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        
+        <!-- Hero / Project Context -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-stone-200">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div class="lg:col-span-2">
+                        <h2 class="text-3xl font-bold text-stone-900 mb-4">Project Overview</h2>
+                        <p class="text-lg text-stone-600 leading-relaxed mb-6">
+                            Sawtify is a high-end podcast transcription and search engine designed for local deployment. 
+                            It bridges the gap between raw audio and searchable knowledge using 
+                            <span class="font-semibold text-stone-900">Laravel 11</span>, 
+                            <span class="font-semibold text-stone-900">Whisper CLI</span>, and 
+                            <span class="font-semibold text-stone-900">Meilisearch</span>.
+                        </p>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-100">
+                                <div class="text-xs text-stone-500 uppercase font-bold tracking-wider mb-1">Backend</div>
+                                <div class="font-bold text-stone-900">PHP 8.4</div>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-100">
+                                <div class="text-xs text-stone-500 uppercase font-bold tracking-wider mb-1">Model</div>
+                                <div class="font-bold text-stone-900">Large-v3-Turbo</div>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-100">
+                                <div class="text-xs text-stone-500 uppercase font-bold tracking-wider mb-1">UI Engine</div>
+                                <div class="font-bold text-stone-900">GSAP + Alpine</div>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-100">
+                                <div class="text-xs text-stone-500 uppercase font-bold tracking-wider mb-1">Language</div>
+                                <div class="font-bold text-stone-900">Arabic (ar)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-stone-900 text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
+                        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-orange-600 rounded-full opacity-20 blur-xl"></div>
+                        <h3 class="font-bold text-lg mb-4 border-b border-stone-700 pb-2">Critical Command</h3>
+                        <p class="text-stone-400 text-sm mb-2">Model Installation Fallback:</p>
+                        <code class="block bg-black p-3 rounded text-green-400 font-mono text-xs break-all">
+                            whisper-cpp.download-ggml-model large-v3-turbo-q8_0
+                        </code>
+                        <div class="mt-4 flex items-center text-xs text-stone-400">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                            System Status: Planning Phase
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Architecture & Stack -->
+        <section id="architecture" class="bg-stone-100 py-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-10 text-center max-w-2xl mx-auto">
+                    <h2 class="text-3xl font-bold text-stone-900 mb-4">System Architecture</h2>
+                    <p class="text-stone-600">
+                        The Sawtify pipeline is a linear data flow designed for performance. Audio is ingested, normalized, processed locally, and indexed for instant retrieval.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                    <!-- Interactive Flow Diagram -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex flex-col">
+                        <h3 class="font-bold text-lg text-stone-800 mb-6">Data Pipeline Flow</h3>
+                        <div class="flex-grow flex flex-col justify-between relative space-y-4">
+                            <!-- Step 1 -->
+                            <div class="system-node bg-stone-50 border border-stone-200 p-4 rounded-lg flex items-center justify-between group cursor-help" onclick="updateDetails('ingest')">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4">1</div>
+                                    <div>
+                                        <div class="font-bold text-stone-900">Ingest & Upload</div>
+                                        <div class="text-xs text-stone-500">MP3/WAV via Dropzone</div>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-stone-300 group-hover:text-blue-500 transition-colors">↓</span>
+                            </div>
+
+                            <!-- Step 2 -->
+                            <div class="system-node bg-stone-50 border border-stone-200 p-4 rounded-lg flex items-center justify-between group cursor-help" onclick="updateDetails('ffmpeg')">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold mr-4">2</div>
+                                    <div>
+                                        <div class="font-bold text-stone-900">Normalization</div>
+                                        <div class="text-xs text-stone-500">FFmpeg: 16kHz Mono</div>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-stone-300 group-hover:text-purple-500 transition-colors">↓</span>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div class="system-node bg-stone-50 border border-stone-200 p-4 rounded-lg flex items-center justify-between group cursor-help" onclick="updateDetails('whisper')">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold mr-4">3</div>
+                                    <div>
+                                        <div class="font-bold text-stone-900">Core Inference</div>
+                                        <div class="text-xs text-stone-500">Whisper CLI (local)</div>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-stone-300 group-hover:text-orange-500 transition-colors">↓</span>
+                            </div>
+
+                            <!-- Step 4 -->
+                            <div class="system-node bg-stone-50 border border-stone-200 p-4 rounded-lg flex items-center justify-between group cursor-help" onclick="updateDetails('index')">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold mr-4">4</div>
+                                    <div>
+                                        <div class="font-bold text-stone-900">Indexing</div>
+                                        <div class="text-xs text-stone-500">Laravel Scout + Meilisearch</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail & Chart Column -->
+                    <div class="space-y-8">
+                        <!-- Dynamic Details Box -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 h-48 overflow-y-auto">
+                            <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Step Detail</h4>
+                            <div id="pipeline-details">
+                                <p class="text-stone-500 italic">Click a stage in the Data Pipeline Flow to view technical implementation details.</p>
+                            </div>
+                        </div>
+
+                        <!-- Stack Composition Chart -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 flex flex-col items-center">
+                            <h3 class="font-bold text-lg text-stone-800 mb-4 w-full text-left">Stack Composition</h3>
+                            <div class="chart-container">
+                                <canvas id="stackChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature Deep Dive -->
+        <section id="features" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <h2 class="text-3xl font-bold text-stone-900 mb-4">Core Feature Matrix</h2>
+            <p class="text-stone-600 mb-12 max-w-3xl">
+                Sawtify relies on four distinct pillars. Each pillar requires specific technical handling, particularly regarding Arabic language support and the "drastic" visual experience.
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-8">
+                <!-- Navigation Tabs -->
+                <div class="md:w-1/3 space-y-4">
+                    <div class="feature-card bg-stone-50 p-6 rounded-xl active" onclick="showFeature('transcription', this)">
+                        <h3 class="font-bold text-stone-900 text-lg">1. Transcription Engine</h3>
+                        <p class="text-sm text-stone-500 mt-2">Local execution, Model management, Job queues.</p>
+                    </div>
+                    <div class="feature-card bg-stone-50 p-6 rounded-xl" onclick="showFeature('arabic', this)">
+                        <h3 class="font-bold text-stone-900 text-lg">2. Arabic Support</h3>
+                        <p class="text-sm text-stone-500 mt-2">RTL Layouts, Language flags, UTF-8 indexing.</p>
+                    </div>
+                    <div class="feature-card bg-stone-50 p-6 rounded-xl" onclick="showFeature('search', this)">
+                        <h3 class="font-bold text-stone-900 text-lg">3. Smart Search</h3>
+                        <p class="text-sm text-stone-500 mt-2">Meilisearch integration, Timestamp fragmentation.</p>
+                    </div>
+                    <div class="feature-card bg-stone-50 p-6 rounded-xl" onclick="showFeature('visuals', this)">
+                        <h3 class="font-bold text-stone-900 text-lg">4. Drastic Visuals</h3>
+                        <p class="text-sm text-stone-500 mt-2">GSAP animations, Audio sync, High-end UX.</p>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="md:w-2/3 bg-white rounded-2xl border border-stone-200 p-8 shadow-sm relative min-h-[400px]">
+                    
+                    <!-- Content: Transcription -->
+                    <div id="content-transcription" class="feature-content transition-opacity duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-2xl font-bold text-stone-900">Local Whisper Integration</h3>
+                            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">Priority High</span>
+                        </div>
+                        <p class="text-stone-600 mb-6">
+                            The core of Sawtify is the `TranscriptionService.php`. It must securely wrap the CLI execution, ensuring timeouts are handled for large podcast files.
+                        </p>
+                        
+                        <div class="bg-stone-50 p-4 rounded-lg border-l-4 border-stone-800 mb-6">
+                            <h4 class="font-bold text-sm text-stone-900 mb-2">Key Implementation Logic</h4>
+                            <ul class="list-disc list-inside text-sm text-stone-600 space-y-2">
+                                <li>Normalize audio to 16kHz mono using FFmpeg.</li>
+                                <li>Check for model existence before execution.</li>
+                                <li>Use Laravel Jobs (`TranscribePodcastJob`) for background processing.</li>
+                                <li>Track progress via Redis for real-time UI updates.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-8">
+                            <h4 class="text-sm font-bold text-stone-500 uppercase tracking-wider mb-2">Projected Model Performance (Token/Sec)</h4>
+                            <div class="chart-container h-48 max-h-48">
+                                <canvas id="modelChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content: Arabic -->
+                    <div id="content-arabic" class="feature-content hidden transition-opacity duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-2xl font-bold text-stone-900">Native Arabic Processing</h3>
+                            <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold">Localization</span>
+                        </div>
+                        <p class="text-stone-600 mb-6">
+                            Sawtify is built specifically for Arabic content. This requires explicit configuration in both the inference engine and the frontend display layer.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <div class="p-4 border border-stone-200 rounded-lg">
+                                <div class="font-bold text-stone-900 mb-1">CLI Config</div>
+                                <code class="text-xs bg-stone-100 p-1 rounded text-orange-600">--language ar</code>
+                                <p class="text-xs text-stone-500 mt-2">Forces the model to focus on Arabic phonemes.</p>
+                            </div>
+                            <div class="p-4 border border-stone-200 rounded-lg">
+                                <div class="font-bold text-stone-900 mb-1">Frontend CSS</div>
+                                <code class="text-xs bg-stone-100 p-1 rounded text-blue-600">dir="rtl"</code>
+                                <p class="text-xs text-stone-500 mt-2">Essential for correct text flow in Blade views.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content: Search -->
+                    <div id="content-search" class="feature-content hidden transition-opacity duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-2xl font-bold text-stone-900">Fragmented Indexing</h3>
+                            <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold">Discovery</span>
+                        </div>
+                        <p class="text-stone-600 mb-6">
+                            Standard full-text search is insufficient for podcasts. Sawtify indexes "Fragments" — small chunks of text with associated timestamps.
+                        </p>
+                        <div class="code-block mb-6">
+                            <pre>// Laravel Scout / Meilisearch Structure
+[
+  "id": 1042,
+  "podcast_id": 88,
+  "timestamp_start": "04:23",
+  "text": "The future of AI in the Arab world is...",
+  "_vectors": [...]
+]</pre>
+                        </div>
+                        <p class="text-stone-600 text-sm">
+                            Clicking a search result immediately seeks the custom Alpine.js player to `timestamp_start`.
+                        </p>
+                    </div>
+
+                    <!-- Content: Visuals -->
+                    <div id="content-visuals" class="feature-content hidden transition-opacity duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-2xl font-bold text-stone-900">Drastic Visual Feedback</h3>
+                            <span class="px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold">UX/UI</span>
+                        </div>
+                        <p class="text-stone-600 mb-6">
+                            The prompt requests "drastic" animations. This involves High-Performance rendering for the transcription process (staggered bars, glowing rings) and audio sync.
+                        </p>
+                        
+                        <div class="border border-stone-200 rounded-xl p-4 bg-stone-900 mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-stone-400">VISUALIZER PREVIEW (Canvas)</span>
+                                <button id="toggleViz" class="text-xs bg-orange-600 text-white px-2 py-1 rounded hover:bg-orange-700">Play/Pause</button>
+                            </div>
+                            <div class="relative w-full h-32 bg-black rounded overflow-hidden">
+                                <canvas id="audioViz" class="w-full h-full"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="text-white text-opacity-50 text-xl font-bold tracking-widest">TRANSCRIBING</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <span class="text-xs border border-stone-300 rounded px-2 py-1">GSAP Flip</span>
+                            <span class="text-xs border border-stone-300 rounded px-2 py-1">ScrollTrigger</span>
+                            <span class="text-xs border border-stone-300 rounded px-2 py-1">Elastic Ease</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Roadmap Checklist -->
+        <section id="specs" class="bg-white border-t border-stone-200 py-16">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-stone-900 mb-8 text-center">Implementation Roadmap</h2>
+                
+                <div class="space-y-6">
+                    <!-- Phase 1 -->
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold">1</div>
+                        <div class="ml-4 flex-1 border-b border-stone-100 pb-6">
+                            <h4 class="text-lg font-bold text-stone-900">Environment Setup</h4>
+                            <p class="text-stone-500 text-sm mt-1">Laravel Herd + PHP 8.4 + Meilisearch Service.</p>
+                            <div class="mt-2 flex gap-2">
+                                <span class="text-xs bg-stone-100 text-stone-600 px-2 py-1 rounded">System Check</span>
+                                <span class="text-xs bg-stone-100 text-stone-600 px-2 py-1 rounded">Queue Config</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 2 -->
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center font-bold">2</div>
+                        <div class="ml-4 flex-1 border-b border-stone-100 pb-6">
+                            <h4 class="text-lg font-bold text-stone-900">Transcription Service</h4>
+                            <p class="text-stone-500 text-sm mt-1">Build <code>TranscriptionService.php</code> wrapper for `whisper-cli`.</p>
+                            <div class="mt-2">
+                                <code class="text-xs text-orange-600">whisper-cpp.download-ggml-model large-v3-turbo-q8_0</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 3 -->
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center font-bold">3</div>
+                        <div class="ml-4 flex-1 border-b border-stone-100 pb-6">
+                            <h4 class="text-lg font-bold text-stone-900">UI & Animation Integration</h4>
+                            <p class="text-stone-500 text-sm mt-1">Implement GSAP Stagger effects for transcript segments and the main player.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="font-mono text-sm">Sawtify Project // Generated Blueprint</p>
+            <p class="text-xs mt-2 text-stone-600">Based on prompt.md requirements</p>
+        </div>
+    </footer>
+
+    <script>
+        // State Management
+        const appState = {
+            activeFeature: 'transcription',
+            isVizPlaying: true
+        };
+
+        // Data Store
+        const pipelineInfo = {
+            'ingest': {
+                title: "1. Ingest & Upload",
+                desc: "User drops MP3/WAV files. Validation checks file integrity. Temporary storage in `/storage/app/temp`.",
+                tech: "Dropzone.js + Laravel Validation"
+            },
+            'ffmpeg': {
+                title: "2. Audio Normalization",
+                desc: "Critical Step: Whisper requires 16kHz mono audio. FFmpeg process must complete before transcription begins.",
+                tech: "FFmpeg Binary"
+            },
+            'whisper': {
+                title: "3. Core Inference",
+                desc: "The `whisper-cli` binary runs with `--language ar`. Model `large-v3-turbo-q8_0` is loaded into RAM.",
+                tech: "C++ / GGML"
+            },
+            'index': {
+                title: "4. Smart Indexing",
+                desc: "Text is parsed into sentences/fragments with timestamps. JSON payload sent to Meilisearch instance.",
+                tech: "Laravel Scout"
+            }
+        };
+
+        // Interaction: Update Pipeline Details
+        function updateDetails(stage) {
+            const container = document.getElementById('pipeline-details');
+            const info = pipelineInfo[stage];
+            
+            // Simple fade effect
+            container.style.opacity = '0';
+            setTimeout(() => {
+                container.innerHTML = `
+                    <h4 class="font-bold text-stone-900 text-lg mb-1">${info.title}</h4>
+                    <p class="text-stone-600 text-sm mb-3">${info.desc}</p>
+                    <div class="inline-block bg-stone-100 text-stone-500 text-xs px-2 py-1 rounded font-mono border border-stone-200">${info.tech}</div>
+                `;
+                container.style.opacity = '1';
+            }, 200);
+        }
+
+        // Interaction: Tab Switching
+        function showFeature(featureId, btnElement) {
+            // Update UI State
+            document.querySelectorAll('.feature-card').forEach(c => c.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            // Hide all content
+            document.querySelectorAll('.feature-content').forEach(c => {
+                c.classList.add('hidden');
+                c.style.opacity = '0';
+            });
+
+            // Show selected
+            const content = document.getElementById(`content-${featureId}`);
+            content.classList.remove('hidden');
+            
+            // Trigger reflow for transition
+            setTimeout(() => {
+                content.style.opacity = '1';
+            }, 10);
+            
+            // If showing specs/transcription, ensure chart renders if not already
+            if(featureId === 'transcription') {
+               // chart renders automatically on load
+            }
+        }
+
+        // Visualization: Canvas Audio Simulation
+        const canvas = document.getElementById('audioViz');
+        const ctx = canvas.getContext('2d');
+        let animationId;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawViz() {
+            if (!appState.isVizPlaying) return;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Fade out trail
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const bars = 30;
+            const barWidth = canvas.width / bars;
+            const time = Date.now() / 200;
+
+            for (let i = 0; i < bars; i++) {
+                const height = Math.sin(time + i * 0.5) * 40 + Math.random() * 20;
+                
+                // Drastic coloring based on height
+                const hue = (i * 10) + (height * 2); 
+                ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+                
+                const x = i * barWidth;
+                const y = (canvas.height / 2) - (height / 2);
+                
+                ctx.fillRect(x + 2, y, barWidth - 4, height);
+            }
+
+            animationId = requestAnimationFrame(drawViz);
+        }
+
+        document.getElementById('toggleViz').addEventListener('click', () => {
+            appState.isVizPlaying = !appState.isVizPlaying;
+            if(appState.isVizPlaying) drawViz();
+        });
+
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', () => {
+            drawViz(); // Start viz
+
+            // 1. Stack Composition (Doughnut)
+            const stackCtx = document.getElementById('stackChart').getContext('2d');
+            new Chart(stackCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Laravel (PHP)', 'Whisper (C++)', 'Frontend (JS/Blade)', 'Search (Rust/Meili)'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#1C1917', '#EA580C', '#57534E', '#D6D3D1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+
+            // 2. Model Performance (Bar)
+            const modelCtx = document.getElementById('modelChart').getContext('2d');
+            new Chart(modelCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Large-v3', 'Large-v3-Turbo', 'Medium', 'Small'],
+                    datasets: [{
+                        label: 'Relative Speed (Higher is Faster)',
+                        data: [10, 85, 45, 90], // Hypothetical relative metrics emphasizing Turbo
+                        backgroundColor: ['#57534E', '#EA580C', '#D6D3D1', '#E7E5E4'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, display: false },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
